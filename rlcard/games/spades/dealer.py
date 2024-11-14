@@ -1,22 +1,14 @@
 from rlcard.utils import init_standard_deck
 import numpy as np
-
+STARTING_HAND = 13
 class SpadesDealer:
-
-    def __init__(self, np_random, num_decks=1):
+    def __init__(self, np_random):
         ''' Initialize a Spades dealer class
+        Note: Spades always uses exactly one deck
         '''
         self.np_random = np_random
-        self.num_decks = num_decks
         self.deck = init_standard_deck()
-        if self.num_decks not in [0, 1]:  # 0 indicates infinite decks of cards
-            self.deck = self.deck * self.num_decks  # copy m standard decks of cards
         self.shuffle()
-        self.hand = []
-
-        '''Not sure what alive represents'''
-        self.status = 'alive'
-        self.score = 0
 
     def shuffle(self):
         ''' Shuffle the deck
@@ -25,15 +17,23 @@ class SpadesDealer:
         self.np_random.shuffle(shuffle_deck)
         self.deck = list(shuffle_deck)
 
-    def deal_card(self, player):
-        ''' Distribute one card to the player
-
+    def deal_cards(self, players):
+        ''' Deal 13 cards to each player at the start of a round
+        
         Args:
-            player_id (int): the target player's id
+            players (list): List of 4 player objects
         '''
-        idx = self.np_random.choice(len(self.deck))
-        card = self.deck[idx]
-        if self.num_decks != 0:  # If infinite decks, do not pop card from deck
-            self.deck.pop(idx)
-        # card = self.deck.pop()
-        player.hand.append(card)
+        if len(players) != 4:
+            raise ValueError("Spades requires exactly 4 players")
+        if len(self.deck) != 52:
+            raise ValueError("Deck must be full before dealing")
+        # In Spades, each player gets exactly 13 cards
+        for _ in range(STARTING_HAND):
+            for player in players:
+                card = self.deck.pop()
+                player.hand.append(card)
+
+    def get_deck(self):
+        ''' Return the current deck
+        '''
+        return self.deck
