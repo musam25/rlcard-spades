@@ -14,7 +14,7 @@ class SpadesDealer:
         self.shuffle()
         self.hand = []
 
-        '''Not sure what alive represnets'''
+        '''Not sure what alive represents'''
         self.status = 'alive'
         self.score = 0
 
