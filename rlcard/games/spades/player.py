@@ -16,15 +16,14 @@ class SpadesPlayer:
         """
         if not round_state:
             raise ValueError("Round state cannot be None")
-
-        if round_state.stage == 'bidding':
-            return list(range(14))  # Can bid 0-13 tricks
         
         if not self.hand:
             raise ValueError("Player has no cards in hand")
-
+        
+        if round_state.stage == 'bidding':
+            return list(range(14))  # Can bid 0-13 tricks
+        
         # If playing stage
-        legal_actions = []
         led_suit = round_state.get_led_suit()
         
         # Must follow suit if possible
