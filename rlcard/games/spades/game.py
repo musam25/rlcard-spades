@@ -1,7 +1,8 @@
-from rlcard.games.spades.dealer import SpadesDealer
-from rlcard.games.spades.round import SpadesRound
-from rlcard.games.spades.player import SpadesPlayer
-
+from .dealer import SpadesDealer
+from .round import SpadesRound
+from .player import SpadesPlayer
+from .judger import SpadesJudger
+import numpy as np
 class SpadesGame:
     def __init__(self, allow_step_back=False):
         self.num_players = 4

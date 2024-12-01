@@ -47,3 +47,7 @@ register(
     env_id='bridge',
     entry_point='rlcard.envs.bridge:BridgeEnv',
 )
+register(
+    env_id='spades',
+    entry_point='rlcard.envs.spades:SpadesEnv',
+)

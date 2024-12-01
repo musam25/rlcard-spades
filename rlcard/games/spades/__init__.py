@@ -1,0 +1,1 @@
+from rlcard.games.spades.game import SpadesGame as Game
