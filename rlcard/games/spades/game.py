@@ -19,15 +19,39 @@ class SpadesGame:
         self.team_bags = [0, 0]
 
     def init_game(self):
-        """Initialize a new round"""
-        # Shuffle and deal
+        """Initialize a new game
+        
+        Returns:
+            dict: The first state of the game
+            int: Current player's id
+        """
+        # Initialize dealer
+        self.dealer = SpadesDealer(self.np_random)
+        
+        # Reset players
+        for player in self.players:
+            player.reset()
+            
+        # Deal cards
         self.dealer.shuffle()
         self.dealer.deal_cards(self.players)
+        
         # Initialize round
         self.round = SpadesRound(self.dealer, self.players)
-        # Get first player's state
+        
+        # Verify players have cards before returning state
+        if not all(len(player.hand) == 13 for player in self.players):
+            # Re-deal if any player doesn't have exactly 13 cards
+            for player in self.players:
+                player.reset()
+            self.dealer.shuffle()
+            self.dealer.deal_cards(self.players)
+        
+        # Get initial state
         state = self.get_state(self.round.current_player)
+        
         return state, self.round.current_player
+
     def step(self, action):
         """Execute one game step"""
         # Process the action
@@ -48,37 +72,35 @@ class SpadesGame:
         state = self.get_state(self.round.current_player)
         return state, self.round.current_player
     def get_state(self, player_id):
-        """Return player's state
-        
-        Args:
-            player_id (int): The player id
-            
-        Returns:
-            dict: The state dictionary
-        """
+        """Get state for the given player id"""
         state = {}
+        player = self.players[player_id]
         
-        # Get player's hand
-        state['hand'] = self.players[player_id].hand
+        # Verify player exists and has cards
+        if not player:
+            raise ValueError(f"Player {player_id} is not valid")
         
-        # Get bidding information
-        state['bids'] = self.round.bids.copy()
+        # Player's hand
+        state['hand'] = player.hand
         
-        # Get current trick information
-        state['current_trick'] = self.round.current_trick.copy()
+        # Round information (if round exists)
+        if self.round:
+            state['current_trick'] = self.round.current_trick
+            state['stage'] = self.round.stage
+            state['bids'] = self.round.bids
+            state['tricks_won'] = self.round.tricks_won
+            state['spades_broken'] = self.round.spades_broken
+        else:
+            # Default values if round not yet initialized
+            state['current_trick'] = []
+            state['stage'] = 'bidding'
+            state['bids'] = [-1, -1, -1, -1]
+            state['tricks_won'] = [0, 0, 0, 0]
+            state['spades_broken'] = False
         
-        # Get trick counts
-        state['tricks_won'] = self.round.tricks_won.copy()
-        
-        # Get spades broken status
-        state['spades_broken'] = self.round.spades_broken
-        
-        # Get game score
-        state['team_scores'] = self.team_scores.copy()
-        state['team_bags'] = self.team_bags.copy()
-        
-        # Get current game stage
-        state['stage'] = self.round.stage
+        # Game score
+        state['team_scores'] = self.team_scores
+        state['team_bags'] = self.team_bags
         
         return state
 
@@ -111,7 +133,10 @@ class SpadesGame:
     def is_over(self):
         """Check if the game is over"""
         # Game ends when a team reaches 500 points
-        return max(self.team_scores) >= 500
+        total_cards = 0
+        for player in  self.players:
+            total_cards += len(player.hand)
+        return total_cards == 0
 
     def get_num_players(self):
         """Return the number of players in the game"""

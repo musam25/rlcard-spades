@@ -18,7 +18,7 @@ class SpadesPlayer:
             raise ValueError("Round state cannot be None")
         
         if not self.hand:
-            raise ValueError("Player has no cards in hand")
+            return []
         
         if round_state.stage == 'bidding':
             return list(range(14))  # Can bid 0-13 tricks

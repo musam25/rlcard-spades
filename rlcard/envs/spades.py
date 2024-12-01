@@ -104,8 +104,8 @@ class SpadesEnv(Env):
         rank_order = {'2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6,
                      '9': 7, 'T': 8, 'J': 9, 'Q': 10, 'K': 11, 'A': 12}
         
-        suit = card[0]
-        rank = card[1]
+        suit = card.get_suit()
+        rank = card.get_rank()
         return suit_order[suit] * 13 + rank_order[rank]
 
     def get_perfect_information(self):
