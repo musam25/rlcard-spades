@@ -137,10 +137,7 @@ class Env(object):
         state, player_id = self.reset()
         # Loop to play the game
         trajectories[player_id].append(state)
-        round_i = 0
         while not self.is_over():
-            print(f"Round {round_i} starting")
-            round_i +=1
             # Agent plays
             if not is_training:
                 action, _ = self.agents[player_id].eval_step(state)

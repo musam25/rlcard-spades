@@ -41,3 +41,4 @@ class SpadesDealer:
         ''' Return the current deck
         '''
         return self.deck
+    

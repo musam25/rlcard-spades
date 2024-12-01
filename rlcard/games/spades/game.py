@@ -3,6 +3,8 @@ from .round import SpadesRound
 from .player import SpadesPlayer
 from .judger import SpadesJudger
 import numpy as np
+from rlcard.utils import init_standard_deck
+
 class SpadesGame:
     def __init__(self, allow_step_back=False):
         self.num_players = 4
@@ -64,10 +66,20 @@ class SpadesGame:
             self.round.current_player = winner
             self.round.current_trick = []
             
-        # Check if round is over
+        # Check if round is over (all cards played)
         if len(self.players[0].hand) == 0:
-            self.round_over()
-            
+            self.round_over()  # Calculate scores for the round
+            print(self.team_scores)
+            # Only redeal if game isn't over (no team has 500 points)
+            if not any(score >= 500 for score in self.team_scores):
+                # Reset for new round
+                self.dealer.deck = init_standard_deck()
+                self.dealer.shuffle()
+                for player in self.players:
+                    player.reset()  # Clear hands and reset player state
+                self.dealer.deal_cards(self.players)
+                self.round = SpadesRound(self.dealer, self.players)
+                
         # Get next state
         state = self.get_state(self.round.current_player)
         return state, self.round.current_player
@@ -109,10 +121,12 @@ class SpadesGame:
         # Calculate team tricks
         team1_tricks = self.round.tricks_won[0] + self.round.tricks_won[2]
         team2_tricks = self.round.tricks_won[1] + self.round.tricks_won[3]
-        
         # Get team bids
         team1_bid = self.round.bids[0] + self.round.bids[2]
         team2_bid = self.round.bids[1] + self.round.bids[3]
+        print(f"Team 1 bids: {team1_bid} and got {team1_tricks} tricks")
+        print(f"Team 2 bids: {team2_bid} and got {team2_tricks} tricks")
+
         
         # Calculate scores and bags
         for team_idx, (bid, tricks) in enumerate([(team1_bid, team1_tricks), 
@@ -133,10 +147,7 @@ class SpadesGame:
     def is_over(self):
         """Check if the game is over"""
         # Game ends when a team reaches 500 points
-        total_cards = 0
-        for player in  self.players:
-            total_cards += len(player.hand)
-        return total_cards == 0
+        return any(score >= 500 for score in self.team_scores)
 
     def get_num_players(self):
         """Return the number of players in the game"""

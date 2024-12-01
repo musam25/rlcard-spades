@@ -1,3 +1,4 @@
+import numpy as np
 class SpadesRound:
     def __init__(self, dealer, players):
         """Initialize a round class
@@ -32,20 +33,29 @@ class SpadesRound:
             raise ValueError(f"Not player {player_id}'s turn")
 
         if self.stage == 'bidding':
-            return self._handle_bid(player_id, action)
+            while True:
+                try:
+                    # Calculate current team bids
+                    team_id = player_id % 2
+                    partner_id = (player_id + 2) % 4
+                    partner_bid = self.bids[partner_id] if self.bids[partner_id] != -1 else 0
+                    team_total = action + partner_bid
+                    
+                    # Check if bid would be valid
+                    if team_total <= 13:
+                        return self._handle_bid(player_id, action)
+                    else:
+                        # Generate a new random bid that would be valid
+                        max_possible_bid = 13 - partner_bid
+                        action = np.random.randint(0, max_possible_bid + 1)
+                except ValueError:
+                    # If any other validation fails, try a new random bid between 0-13
+                    action = np.random.randint(0, 14)
         else:  # stage == 'playing'
             return self._handle_play(player_id, action)
 
     def _handle_bid(self, player_id, bid):
-        """Handle a player's bid
-        
-        Args:
-            player_id (int): Player making the bid
-            bid (int): Number of tricks bid (0-13)
-        """
-        if not 0 <= bid <= 13:
-            raise ValueError(f"Invalid bid: {bid}")
-            
+        """Handle a player's bid"""
         self.bids[player_id] = bid
         self.players[player_id].set_bid(bid)
         self.current_player = (player_id + 1) % 4
@@ -53,7 +63,6 @@ class SpadesRound:
         # Check if bidding is complete
         if all(b != -1 for b in self.bids):
             self.stage = 'playing'
-            # First player after dealer leads
             self.current_player = (self.dealer.first_player + 1) % 4
             self.trick_leader = self.current_player
         
