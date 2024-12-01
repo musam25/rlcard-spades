@@ -1,3 +1,4 @@
+import numpy as np
 class SpadesPlayer:
     def __init__(self, player_id):
         self.player_id = player_id
@@ -74,7 +75,59 @@ class SpadesPlayer:
         if not 0 <= bid <= 13:
             raise ValueError(f"Invalid bid: {bid}. Must be between 0 and 13")
         self.bid = bid
+    def evaluate_hand_strength(self):
+        """Evaluate the strength of a hand for bidding"""
+        score = 0
+        spades_count = 0
+        high_cards = {'A': 4, 'K': 3, 'Q': 2, 'J': 1}
+        
+        for card in self.hand:
+            # Count spades separately
+            if card.suit == 'S':
+                spades_count += 1
+                if card.rank in high_cards:
+                    score += high_cards[card.rank] * 1.5  # Spades worth more
+            else:
+                # Score high cards in other suits
+                if card.rank in high_cards:
+                    score += high_cards[card.rank]
+                
+            # Add points for void suits (no cards in a suit)
+            suits = {'H': 0, 'D': 0, 'C': 0}
+            for card in self.hand:
+                if card.suit in suits:
+                    suits[card.suit] += 1
+            for count in suits.values():
+                if count == 0:  # Void in suit
+                    score += 2
+                elif count == 1:  # Singleton
+                    score += 1
+                    
+        # Estimate tricks based on hand strength
+        estimated_tricks = (score / 3) + (spades_count / 2)
+        return max(0, min(13, round(estimated_tricks)))
 
+    def suggest_bid(self, round_state):
+        """Suggest a reasonable bid based on hand strength and partner's bid"""
+        if round_state.stage != 'bidding':
+            return 0
+        return np.random.randint(2,4)   
+        # Get partner's bid if made
+        partner_id = (self.player_id + 2) % 4
+        partner_bid = round_state.bids[partner_id]
+        
+        # Evaluate own hand
+        hand_strength = self.evaluate_hand_strength()
+        
+        # If partner hasn't bid yet
+        if partner_bid == -1:
+            return min(hand_strength, 7)  # Conservative initial bid
+            
+        # If partner has bid, ensure combined bid is reasonable
+        max_possible_bid = 13 - partner_bid
+        suggested_bid = min(hand_strength, max_possible_bid)
+        
+        return suggested_bid
     def get_partner_id(self):
         """Get the ID of this player's partner"""
         return (self.player_id + 2) % 4

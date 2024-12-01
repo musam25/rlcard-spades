@@ -67,7 +67,8 @@ class SpadesGame:
             self.round.current_trick = []
             
         # Check if round is over (all cards played)
-        if len(self.players[0].hand) == 0:
+        total_cards = sum(len(player.hand) for player in self.players)
+        if total_cards == 0:
             self.round_over()  # Calculate scores for the round
             print(self.team_scores)
             # Only redeal if game isn't over (no team has 500 points)

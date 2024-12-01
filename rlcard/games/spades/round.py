@@ -33,25 +33,14 @@ class SpadesRound:
             raise ValueError(f"Not player {player_id}'s turn")
 
         if self.stage == 'bidding':
-            while True:
-                try:
-                    # Calculate current team bids
-                    team_id = player_id % 2
-                    partner_id = (player_id + 2) % 4
-                    partner_bid = self.bids[partner_id] if self.bids[partner_id] != -1 else 0
-                    team_total = action + partner_bid
-                    
-                    # Check if bid would be valid
-                    if team_total <= 13:
-                        return self._handle_bid(player_id, action)
-                    else:
-                        # Generate a new random bid that would be valid
-                        max_possible_bid = 13 - partner_bid
-                        action = np.random.randint(0, max_possible_bid + 1)
-                except ValueError:
-                    # If any other validation fails, try a new random bid between 0-13
-                    action = np.random.randint(0, 14)
+            # Ignore input action, always use suggested bid
+            bid = self.players[player_id].suggest_bid(self)
+            return self._handle_bid(player_id, bid)
         else:  # stage == 'playing'
+            if not self._is_valid_play(player_id, action):
+                legal_actions = self.players[player_id].get_legal_actions(self)
+                if legal_actions:
+                    action = np.random.choice(legal_actions)
             return self._handle_play(player_id, action)
 
     def _handle_bid(self, player_id, bid):
@@ -133,11 +122,13 @@ class SpadesRound:
         """Handle completion of a trick"""
         # Determine winner
         winning_card = max(self.current_trick, 
-                         key=lambda c: (c.suit == 'S', c.suit == self.led_suit, c.rank))
+                        key=lambda c: (c.suit == 'S', c.suit == self.led_suit, c.rank))
         winner = (self.trick_leader + self.current_trick.index(winning_card)) % 4
+        
         
         # Update state
         self.tricks_won[winner] += 1
+        
         self.trick_history.append(self.current_trick.copy())
         
         # Setup next trick
