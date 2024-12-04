@@ -199,7 +199,7 @@ class SpadesEnv(Env):
         state, player_id = self.reset()
         print("Startin Spades Game...")
         done = False
-        while not done:
+        while not done: # while game is not OVER INSTEAD
             # Get current player's action
             action = self.agents[player_id].step(state)
             # Record state and action
@@ -217,26 +217,26 @@ class SpadesEnv(Env):
                     player_id = self.game.get_player_id()
                     
             except Exception as e:
-                print(f"Game ended: {str(e)}")
+                #print(f"Game ended: {str(e)}")
                 done = True
                 break
         
         # Get final payoffs
         payoffs = self.get_payoffs()
         winning_team = None
-        print("\nGame Over!")
-        print(f"Final scores: {self.game.team_scores}")
+        #print("\nGame Over!")
+        #print(f"Final scores: {self.game.team_scores}")
         if max(self.game.team_scores) >= 500:
             winning_team = 0 if self.game.team_scores[0] >= 500 else 1
-            print(f"Team {winning_team + 1} won by reaching 500!")
+            #print(f"Team {winning_team + 1} won by reaching 500!")
         elif min(self.game.team_scores) <= -200:
             losing_team = 0 if self.game.team_scores[0] <= -200 else 1
-            print(f"Team {losing_team + 1} lost by reaching -200!")
+            #print(f"Team {losing_team + 1} lost by reaching -200!")
         else:
             winning_team = 0 if self.game.team_scores[0] > self.game.team_scores[1] else 1
-            print(f"Team {winning_team + 1} won by having more points after the maximum rounds.")
+            #print(f"Team {winning_team + 1} won by having more points after the maximum rounds.")
         self.game.winner = winning_team
         self.game = Game()
-        print(f"Reseted Final scores: {self.game.team_scores}")
+       # print(f"Reseted Final scores: {self.game.team_scores}")
 
         return trajectories, payoffs

@@ -55,7 +55,7 @@ def train(args):
 
     # Start training
     with Logger(args.log_dir) as logger:
-            for episode in tqdm(range(args.num_episodes), desc="Training", ncols=80,position=0):
+        for episode in tqdm(range(args.num_episodes), desc="Training", ncols=80,position=0):
 
             if args.algorithm == 'nfsp':
                 agents[0].sample_episode_policy()
