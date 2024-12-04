@@ -197,12 +197,11 @@ class SpadesEnv(Env):
         """Run a complete game"""
         trajectories = [[] for _ in range(self.num_players)]
         state, player_id = self.reset()
-        
+        print("Startin Spades Game...")
         done = False
         while not done:
             # Get current player's action
             action = self.agents[player_id].step(state)
-            
             # Record state and action
             trajectories[player_id].append({
                 'state': state,
@@ -224,7 +223,7 @@ class SpadesEnv(Env):
         
         # Get final payoffs
         payoffs = self.get_payoffs()
-        
+        winning_team = None
         print("\nGame Over!")
         print(f"Final scores: {self.game.team_scores}")
         if max(self.game.team_scores) >= 500:
@@ -233,5 +232,11 @@ class SpadesEnv(Env):
         elif min(self.game.team_scores) <= -200:
             losing_team = 0 if self.game.team_scores[0] <= -200 else 1
             print(f"Team {losing_team + 1} lost by reaching -200!")
-        
+        else:
+            winning_team = 0 if self.game.team_scores[0] > self.game.team_scores[1] else 1
+            print(f"Team {winning_team + 1} won by having more points after the maximum rounds.")
+        self.game.winner = winning_team
+        self.game = Game()
+        print(f"Reseted Final scores: {self.game.team_scores}")
+
         return trajectories, payoffs

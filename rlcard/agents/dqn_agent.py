@@ -201,7 +201,6 @@ class DQNAgent(object):
             loss (float): The loss of the current batch.
         '''
         state_batch, action_batch, reward_batch, next_state_batch, done_batch, legal_actions_batch = self.memory.sample()
-
         # Calculate best next actions using Q-network (Double DQN)
         q_values_next = self.q_estimator.predict_nograd(next_state_batch)
         legal_actions = []
@@ -405,7 +404,6 @@ class Estimator(object):
         self.optimizer.zero_grad()
 
         self.qnet.train()
-
         s = torch.from_numpy(s).float().to(self.device)
         a = torch.from_numpy(a).long().to(self.device)
         y = torch.from_numpy(y).float().to(self.device)

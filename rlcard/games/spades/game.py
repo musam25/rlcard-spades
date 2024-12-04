@@ -16,7 +16,7 @@ class SpadesGame:
         self.dealer = SpadesDealer(self.np_random)
         self.judger = SpadesJudger()
         self.round = None
-        
+        self.winner = None
         self.team_scores = [0, 0]  # Team 0,2 and Team 1,3
         self.team_bags = [0, 0]
         
@@ -86,8 +86,6 @@ class SpadesGame:
         team1_bid = self.round.bids[0] + self.round.bids[2]
         team2_bid = self.round.bids[1] + self.round.bids[3]
         
-        print(f"Team 1 bids: {team1_bid} and got {team1_tricks} tricks")
-        print(f"Team 2 bids: {team2_bid} and got {team2_tricks} tricks")
 
         # Calculate scores for each team
         for team_idx, (bid, tricks) in enumerate([(team1_bid, team1_tricks), 
@@ -146,12 +144,10 @@ class SpadesGame:
             # Ensure scores stay in reasonable range
             if new_score < -200:
                 new_score = -200
-            elif new_score > 500:
-                new_score = 500
                 
             self.team_scores[team_idx] = new_score
             
-        print(f"Team scores: {self.team_scores}")
+        #print(f"Team scores: {self.team_scores}")
 
 
     def is_over(self):

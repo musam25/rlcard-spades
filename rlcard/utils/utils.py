@@ -178,6 +178,37 @@ def reorganize(trajectories, payoffs):
             new_trajectories[player].append(transition)
     return new_trajectories
 
+def spades_reorganize(trajectories, payoffs):
+    ''' Reorganize the trajectory to make it RL friendly
+
+    Args:
+        trajectory (list): A list of trajectories
+        payoffs (list): A list of payoffs for the players. Each entry corresponds to one player
+
+    Returns:
+        (list): A new trajectories that can be fed into RL algorithms.
+
+    '''
+    num_players = len(trajectories)
+    new_trajectories = [[] for _ in range(num_players)]
+
+    for player in range(num_players):
+        for i in range(0, len(trajectories[player])-2, 2):
+            if i ==len(trajectories[player])-3:
+                reward = payoffs[player]
+                done =True
+            else:
+                reward, done = 0, False
+            # Reorganaize the data to be state, action, reward, next_state, done
+            state = trajectories[player][i][0]["state"].copy()
+            action = trajectories[player][i][1]["action"]
+            next_state = trajectories[player][i+1][0]["state"].copy()
+            transition = [state, action, next_state]
+            transition.insert(2, reward)
+            transition.append(done)
+
+            new_trajectories[player].append(transition)
+    return new_trajectories
 def remove_illegal(action_probs, legal_actions):
     ''' Remove illegal actions and normalize the
         probability vector

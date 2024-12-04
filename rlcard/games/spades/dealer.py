@@ -31,12 +31,12 @@ class SpadesDealer:
             print(f"Error: Deck size is {len(self.deck)} instead of 52")  # Debug
             raise ValueError("Deck must be full before dealing")
             
-        print("Starting to deal cards")  # Debug
+        #print("Starting to deal cards")  # Debug
         for _ in range(STARTING_HAND):
             for player in players:
                 card = self.deck.pop()
                 player.hand.append(card)
-        print("All cards dealt")
+        #print("All cards dealt")
     def get_deck(self):
         ''' Return the current deck
         '''
