@@ -24,9 +24,79 @@ class SpadesEnv(Env):
 
     def _get_legal_actions(self):
         ''' Get all legal actions for current state '''
-        legal_actions = self.game.get_legal_actions()
-        legal_ids = {idx: None for idx in range(len(legal_actions))}
-        return OrderedDict(legal_ids)
+        legal_actions = OrderedDict()
+        raw_legal_actions = self.game.get_legal_actions()
+        for i, action in enumerate(raw_legal_actions):
+            legal_actions[i] = action
+        return legal_actions
+
+    def step(self, action):
+        """Execute one step in the environment"""
+        try:
+            # Get next state from game
+            next_state, next_player = self.game.step(action)
+            
+            # Calculate rewards and check end conditions
+            done = False
+            reward = 0
+            
+            # Check if round is over
+            all_cards_played = all(len(player.hand) == 0 for player in self.game.players)
+            if all_cards_played:
+                reward = self._calculate_round_reward()
+                
+                # Check if game is over
+                if self.game.is_over():
+                    done = True
+                    reward += self._calculate_game_reward()
+                else:
+                    # Start new round
+                    next_state, next_player = self.game.init_game()
+            
+            extracted_state = self._extract_state(next_state)
+            return extracted_state, reward, done, {}
+            
+        except Exception as e:
+            # Handle the case where we need to start a new round
+            if str(e) == "Player has no cards in hand":
+                if self.game.is_over():
+                    state = self.game.get_state(self.game.get_player_id())
+                    return self._extract_state(state), self._calculate_game_reward(), True, {}
+                    
+                # Start new round if game isn't over
+                next_state, next_player = self.game.init_game()
+                return self._extract_state(next_state), self._calculate_round_reward(), False, {}
+                
+            raise e
+
+    def reset(self):
+        """Reset the environment"""
+        state, player_id = self.game.init_game()
+        return self._extract_state(state), player_id
+
+    def _calculate_round_reward(self):
+        """Calculate reward at end of round"""
+        current_player = self.game.round.current_player
+        team = current_player % 2
+        
+        # Calculate if team made their contract
+        team_tricks = sum(self.game.round.tricks_won[i] for i in [team, team + 2])
+        team_bid = sum(self.game.round.bids[i] for i in [team, team + 2])
+        
+        if team_tricks >= team_bid:
+            return 1.0  # Made contract
+        return -1.0  # Missed contract
+
+    def _calculate_game_reward(self):
+        """Calculate reward at end of game"""
+        current_player = self.game.round.current_player
+        team = current_player % 2
+        
+        if self.game.team_scores[team] > self.game.team_scores[1-team]:
+            return 5.0  # Won game
+        elif self.game.team_scores[team] < self.game.team_scores[1-team]:
+            return -5.0  # Lost game
+        return 0.0  # Tie
 
     def _extract_state(self, state):
         ''' Extract state information for RL agent '''
@@ -67,12 +137,12 @@ class SpadesEnv(Env):
         obs[117] = 1 if state.get('stage') == 'playing' else 0
         
         legal_actions = self._get_legal_actions()
+        
         extracted_state = {
             'obs': obs,
             'legal_actions': legal_actions,
             'raw_obs': state,
-            'raw_legal_actions': list(legal_actions.keys()),
-            'action_record': self.action_recorder
+            'raw_legal_actions': list(legal_actions.keys())
         }
         return extracted_state
 
@@ -122,3 +192,46 @@ class SpadesEnv(Env):
         state['stage'] = self.game.round.stage if self.game.round else 'bidding'
         state['current_player'] = self.game.round.current_player if self.game.round else 0
         return state
+        
+    def run(self, is_training=False):
+        """Run a complete game"""
+        trajectories = [[] for _ in range(self.num_players)]
+        state, player_id = self.reset()
+        
+        done = False
+        while not done:
+            # Get current player's action
+            action = self.agents[player_id].step(state)
+            
+            # Record state and action
+            trajectories[player_id].append({
+                'state': state,
+                'action': action
+            })
+            
+            # Take step
+            try:
+                next_state, reward, done, _ = self.step(action)
+                state = next_state
+                
+                if not done:
+                    player_id = self.game.get_player_id()
+                    
+            except Exception as e:
+                print(f"Game ended: {str(e)}")
+                done = True
+                break
+        
+        # Get final payoffs
+        payoffs = self.get_payoffs()
+        
+        print("\nGame Over!")
+        print(f"Final scores: {self.game.team_scores}")
+        if max(self.game.team_scores) >= 500:
+            winning_team = 0 if self.game.team_scores[0] >= 500 else 1
+            print(f"Team {winning_team + 1} won by reaching 500!")
+        elif min(self.game.team_scores) <= -200:
+            losing_team = 0 if self.game.team_scores[0] <= -200 else 1
+            print(f"Team {losing_team + 1} lost by reaching -200!")
+        
+        return trajectories, payoffs

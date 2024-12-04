@@ -1,4 +1,5 @@
 import numpy as np
+
 class SpadesRound:
     def __init__(self, dealer, players):
         """Initialize a round class
@@ -20,31 +21,44 @@ class SpadesRound:
         self.led_suit = None  # Current trick's led suit
 
     def proceed_round(self, player_id, action):
-        """Process a player's action in the round
-        
-        Args:
-            player_id (int): ID of player making the action
-            action: Bid (int) or Card depending on stage
-            
-        Returns:
-            bool: True if action was successful
-        """
+        """Process a player's action in the round"""
         if player_id != self.current_player:
             raise ValueError(f"Not player {player_id}'s turn")
 
+        # Check if player has cards before proceeding
+        if not self.players[player_id].hand:
+            return True
+
         if self.stage == 'bidding':
-            # Ignore input action, always use suggested bid
-            bid = self.players[player_id].suggest_bid(self)
+            # Convert action to bid (should be 0-13)
+            bid = int(action) if isinstance(action, (int, np.integer)) else 0
+            bid = max(0, min(13, bid))  # Ensure bid is between 0 and 13
             return self._handle_bid(player_id, bid)
         else:  # stage == 'playing'
-            if not self._is_valid_play(player_id, action):
-                legal_actions = self.players[player_id].get_legal_actions(self)
-                if legal_actions:
-                    action = np.random.choice(legal_actions)
-            return self._handle_play(player_id, action)
+            legal_actions = self.players[player_id].get_legal_actions(self)
+            if not legal_actions:
+                return True  # No valid actions means round should end
+            
+            # Convert action index to actual card
+            if isinstance(action, (int, np.integer)):
+                action_idx = action % len(legal_actions)
+                card = legal_actions[action_idx]
+            else:
+                card = np.random.choice(legal_actions)
+            
+            return self._handle_play(player_id, card)
 
     def _handle_bid(self, player_id, bid):
         """Handle a player's bid"""
+        # Ensure bid is reasonable
+        if not isinstance(bid, (int, np.integer)) or bid < 0 or bid > 13:
+            # Generate a more realistic bid based on hand strength
+            hand = self.players[player_id].hand
+            spades = len([c for c in hand if c.suit == 'S'])
+            high_cards = len([c for c in hand if c.rank in ['A', 'K', 'Q']])
+            suggested_bid = min(13, max(1, (spades + high_cards) // 3))
+            bid = suggested_bid
+            
         self.bids[player_id] = bid
         self.players[player_id].set_bid(bid)
         self.current_player = (player_id + 1) % 4
@@ -58,12 +72,7 @@ class SpadesRound:
         return True
 
     def _handle_play(self, player_id, card):
-        """Handle a player playing a card
-        
-        Args:
-            player_id (int): Player playing the card
-            card: Card being played
-        """
+        """Handle a player playing a card"""
         # Validate card can be played
         if not self._is_valid_play(player_id, card):
             raise ValueError(f"Invalid play: {card}")
@@ -89,15 +98,7 @@ class SpadesRound:
         return True
 
     def _is_valid_play(self, player_id, card):
-        """Check if a card play is valid
-        
-        Args:
-            player_id (int): Player attempting to play
-            card: Card being played
-            
-        Returns:
-            bool: True if play is valid
-        """
+        """Check if a card play is valid"""
         player = self.players[player_id]
         
         # Must have the card
@@ -125,10 +126,8 @@ class SpadesRound:
                         key=lambda c: (c.suit == 'S', c.suit == self.led_suit, c.rank))
         winner = (self.trick_leader + self.current_trick.index(winning_card)) % 4
         
-        
         # Update state
         self.tricks_won[winner] += 1
-        
         self.trick_history.append(self.current_trick.copy())
         
         # Setup next trick
@@ -146,14 +145,7 @@ class SpadesRound:
         return len(self.trick_history) == 13
 
     def get_trick_winner(self, trick):
-        """Get the winner of a specific trick
-        
-        Args:
-            trick: List of 4 cards
-            
-        Returns:
-            int: Player ID of winner
-        """
+        """Get the winner of a specific trick"""
         winning_card = max(trick, 
                          key=lambda c: (c.suit == 'S', c.suit == trick[0].suit, c.rank))
         return (self.trick_leader + trick.index(winning_card)) % 4
