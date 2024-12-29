@@ -32,6 +32,7 @@ class SpadesGame:
             self.team_bags = [0, 0]
         else:
             self.round_number += 1
+            print(f"Round number is: {self.round_number}")
             
         # Deal new hands
         self.dealer = SpadesDealer(self.np_random)
